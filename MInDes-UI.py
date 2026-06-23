@@ -345,12 +345,18 @@ class MainWindow(QMainWindow):
 
         # --- Tools menu (inserted between File and About) ---
         tools_menu = menubar.addMenu("Tools")
-        common_tangent_menu = tools_menu.addMenu("CommonTangent")
+        csv_plotter_action = QAction("CSV Plotter", self)
+        csv_plotter_action.triggered.connect(self.open_csv_plotter)
+        tools_menu.addAction(csv_plotter_action)
+
+        thermo_calc_menu = tools_menu.addMenu("Thermo-Calc")
+
+        common_tangent_menu = thermo_calc_menu.addMenu("CommonTangent")
         phase2_comp3_action = QAction("Phase2Comp3", self)
         phase2_comp3_action.triggered.connect(self.open_common_tangent_phase2_comp3)
         common_tangent_menu.addAction(phase2_comp3_action)
 
-        fitting_menu = tools_menu.addMenu("Fitting")
+        fitting_menu = thermo_calc_menu.addMenu("Fitting")
         comp3_action = QAction("Comp3", self)
         comp3_action.triggered.connect(self.open_fitting_comp3)
         fitting_menu.addAction(comp3_action)
@@ -369,6 +375,24 @@ class MainWindow(QMainWindow):
         """当用户选择 "About MInDes" 菜单项时调用"""
         about_dialog = AboutDialog(self)  # 实例化 AboutDialog
         about_dialog.exec()  # 显示关于对话框
+
+    def open_csv_plotter(self):
+        """Open the standalone multi-file CSV plotting tool."""
+        try:
+            from Tools.CSVPlotterTools.csv_plotter_gui import CSVPlotterDialog
+            dialog = CSVPlotterDialog(parent=self)
+            dialog.setWindowIcon(get_app_icon())
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+            dialog.show()
+            if not hasattr(self, "_tool_windows"):
+                self._tool_windows = []
+            self._tool_windows.append(dialog)
+            dialog.destroyed.connect(
+                lambda _=None, value=dialog: self._tool_windows.remove(value)
+                if value in self._tool_windows else None
+            )
+        except Exception as exc:
+            QMessageBox.critical(self, "Launch Error", f"Failed to open CSV Plotter:\n{exc}")
 
     def open_common_tangent_phase2_comp3(self):
         """打开 CommonTangent Phase2Comp3 子对话框 (非模态, 不阻塞主界面)."""
